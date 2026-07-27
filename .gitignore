@@ -1,0 +1,28 @@
+# Build and deployment output
+/build-qt/
+/dist/
+/dist-staging/
+/release/
+
+# Local development tools and temporary captures
+/.tooling/
+
+# Personal reminder data
+reminders.json
+reminders.json*.bak
+reminders.dat
+
+# CMake and IDE user state
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+*.user
+*.user.*
+/.vs/
+/.vscode/
+
+# Windows and editor noise
+Thumbs.db
+Desktop.ini
+*.tmp
+*.log
