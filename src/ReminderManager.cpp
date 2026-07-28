@@ -11,7 +11,9 @@
 #include <QMenu>
 #include <QPainter>
 #include <QSaveFile>
+#include <QScreen>
 #include <QSettings>
+#include <QWindow>
 #include <QStandardPaths>
 #include <QVariantMap>
 
@@ -493,6 +495,23 @@ void ReminderManager::quitApplication()
     QCoreApplication::quit();
 }
 
+QVariantMap ReminderManager::availableScreenGeometry(QWindow *window) const
+{
+    QScreen *screen = window ? window->screen() : nullptr;
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+    if (!screen)
+        return {};
+
+    const QRect available = screen->availableGeometry();
+    return {
+        {QStringLiteral("x"), available.x()},
+        {QStringLiteral("y"), available.y()},
+        {QStringLiteral("width"), available.width()},
+        {QStringLiteral("height"), available.height()}
+    };
+}
+
 void ReminderManager::previewAlarm()
 {
     if (m_current)
@@ -561,24 +580,28 @@ void ReminderManager::setAutorunEnabled(bool enabled)
 void ReminderManager::checkDue()
 {
     const QDateTime now = QDateTime::currentDateTime();
-    bool changed = false;
-
     if (!m_items.empty() && !m_items.front().missed && m_items.front().due <= now)
     {
-        beginResetModel();
-        while (!m_items.empty() && !m_items.front().missed && m_items.front().due <= now)
+        std::vector<Reminder> candidateItems = m_items;
+        std::deque<Reminder> candidateQueue = m_dueQueue;
+        while (!candidateItems.empty()
+               && !candidateItems.front().missed
+               && candidateItems.front().due <= now)
         {
-            m_dueQueue.push_back(std::move(m_items.front()));
-            m_items.erase(m_items.begin());
+            candidateQueue.push_back(std::move(candidateItems.front()));
+            candidateItems.erase(candidateItems.begin());
         }
+
+        if (!writeAutomaticData(candidateItems, candidateQueue, m_current))
+            return;
+
+        beginResetModel();
+        m_items = std::move(candidateItems);
+        m_dueQueue = std::move(candidateQueue);
         endResetModel();
         emit countChanged();
         emit pendingChanged();
-        changed = true;
     }
-
-    if (changed)
-        saveData(false);
 
     showNextReminder();
 }
@@ -784,7 +807,23 @@ bool ReminderManager::writeData(
 
     m_preserveUnreadableData = false;
     m_corruptBackupCreated = false;
+    m_automaticStorageFailureReported = false;
     return true;
+}
+
+bool ReminderManager::writeAutomaticData(
+    const std::vector<Reminder> &items,
+    const std::deque<Reminder> &dueQueue,
+    const std::optional<Reminder> &current)
+{
+    const bool saved = writeData(
+        items,
+        dueQueue,
+        current,
+        !m_automaticStorageFailureReported);
+    if (!saved)
+        m_automaticStorageFailureReported = true;
+    return saved;
 }
 
 void ReminderManager::sortItems()
@@ -797,13 +836,18 @@ void ReminderManager::showNextReminder()
     if (m_current || m_dueQueue.empty())
         return;
 
-    m_current = std::move(m_dueQueue.front());
-    m_dueQueue.pop_front();
-    saveData(false);
+    std::deque<Reminder> candidateQueue = m_dueQueue;
+    std::optional<Reminder> candidateCurrent = std::move(candidateQueue.front());
+    candidateQueue.pop_front();
+    if (!writeAutomaticData(m_items, candidateQueue, candidateCurrent))
+        return;
+
+    m_dueQueue = std::move(candidateQueue);
+    m_current = std::move(candidateCurrent);
     emit pendingChanged();
     emit currentReminderChanged();
     emit alarmRequested();
-    if (m_current->id >= 0)
+    if (m_current->id >= 0 && m_systemIntegrationEnabled)
         startAlarm();
 }
 

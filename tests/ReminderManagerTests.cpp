@@ -74,6 +74,8 @@ private slots:
     void removeFailureRollsBack();
     void corruptDataIsPreservedWithUniqueBackups();
     void startupMarksPastItemsMissedAndKeepsOrdering();
+    void dueTransitionPersistsAndShowsReminder();
+    void duePersistenceFailureDoesNotMutateState();
     void continuousSequenceAdvancesToSecondReminder();
 };
 
@@ -207,6 +209,69 @@ void ReminderManagerTests::startupMarksPastItemsMissedAndKeepsOrdering()
     for (const QJsonValue &value : stored)
         missed += value.toObject().value(QStringLiteral("missed")).toBool() ? 1 : 0;
     QCOMPARE(missed, 1);
+}
+
+void ReminderManagerTests::dueTransitionPersistsAndShowsReminder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString dataPath =
+        directory.filePath(QStringLiteral("reminders.json"));
+    const QDateTime due =
+        QDateTime::fromSecsSinceEpoch(QDateTime::currentSecsSinceEpoch() + 2);
+
+    QJsonArray initial;
+    initial.append(reminderObject(due, QStringLiteral("按时进入提醒")));
+    QVERIFY(writeReminders(dataPath, initial));
+
+    ReminderManager manager(false, nullptr, directory.path(), false);
+    QTRY_COMPARE_WITH_TIMEOUT(manager.count(), 0, 4000);
+    QCOMPARE(manager.pendingCount(), 1);
+    QVERIFY(manager.hasCurrent());
+    QCOMPARE(manager.currentText(), QStringLiteral("按时进入提醒"));
+
+    const QJsonArray stored = readReminders(dataPath);
+    QCOMPARE(stored.size(), 1);
+    QCOMPARE(
+        stored.first().toObject().value(QStringLiteral("text")).toString(),
+        QStringLiteral("按时进入提醒"));
+}
+
+void ReminderManagerTests::duePersistenceFailureDoesNotMutateState()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString dataPath =
+        directory.filePath(QStringLiteral("reminders.json"));
+    const QDateTime due =
+        QDateTime::fromSecsSinceEpoch(QDateTime::currentSecsSinceEpoch() + 2);
+
+    QJsonArray initial;
+    initial.append(reminderObject(due, QStringLiteral("写入失败后仍保留")));
+    QVERIFY(writeReminders(dataPath, initial));
+
+    ReminderManager manager(false, nullptr, directory.path(), false);
+    QSignalSpy errorSpy(&manager, &ReminderManager::toastRequested);
+    QVERIFY(QFile::remove(dataPath));
+    QVERIFY(QDir().rmdir(directory.path()));
+
+    QTRY_VERIFY_WITH_TIMEOUT(QDateTime::currentDateTime() >= due, 4000);
+    QVERIFY(QMetaObject::invokeMethod(
+        &manager,
+        "checkDue",
+        Qt::DirectConnection));
+
+    QCOMPARE(manager.count(), 1);
+    QCOMPARE(manager.activeCount(), 1);
+    QCOMPARE(manager.pendingCount(), 0);
+    QVERIFY(!manager.hasCurrent());
+    QCOMPARE(errorSpy.count(), 1);
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &manager,
+        "checkDue",
+        Qt::DirectConnection));
+    QCOMPARE(errorSpy.count(), 1);
 }
 
 void ReminderManagerTests::continuousSequenceAdvancesToSecondReminder()

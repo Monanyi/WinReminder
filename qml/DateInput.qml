@@ -91,6 +91,9 @@ Item {
         height: 32
         flat: true
         scale: down ? 0.92 : 1
+        Accessible.name: "打开日期选择器"
+        ToolTip.visible: hovered
+        ToolTip.text: "选择日期"
 
         contentItem: Item {
             Rectangle {

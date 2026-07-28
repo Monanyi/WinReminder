@@ -7,12 +7,14 @@
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QVariantList>
+#include <QVariantMap>
 
 #include <deque>
 #include <optional>
 #include <vector>
 
 class QMenu;
+class QWindow;
 
 struct Reminder
 {
@@ -86,6 +88,7 @@ public:
     Q_INVOKABLE void dismissCurrentAsMissed();
     Q_INVOKABLE void notifyHidden();
     Q_INVOKABLE void quitApplication();
+    Q_INVOKABLE QVariantMap availableScreenGeometry(QWindow *window) const;
     void previewAlarm();
     void previewAlarmSequence();
     void showMainWindow();
@@ -121,6 +124,10 @@ private:
         const std::deque<Reminder> &dueQueue,
         const std::optional<Reminder> &current,
         bool reportErrors);
+    bool writeAutomaticData(
+        const std::vector<Reminder> &items,
+        const std::deque<Reminder> &dueQueue,
+        const std::optional<Reminder> &current);
     void sortItems();
     void showNextReminder();
     void startAlarm();
@@ -149,6 +156,7 @@ private:
     QString m_startupStorageError;
     bool m_preserveUnreadableData = false;
     bool m_corruptBackupCreated = false;
+    bool m_automaticStorageFailureReported = false;
 
     QTimer m_dueTimer;
     QTimer m_relativeTimer;

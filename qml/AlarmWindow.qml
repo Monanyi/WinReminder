@@ -33,10 +33,9 @@ Window {
     flags: Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
 
     function positionAtBottomRight() {
-        restingX = alarm.screen.virtualX
-                   + alarm.screen.desktopAvailableWidth - alarm.width - 18
-        restingY = alarm.screen.virtualY
-                   + alarm.screen.desktopAvailableHeight - alarm.height - 18
+        const available = alarm.reminders.availableScreenGeometry(alarm.ownerWindow)
+        restingX = available.x + available.width - alarm.width - 18
+        restingY = available.y + available.height - alarm.height - 18
         y = restingY
     }
 

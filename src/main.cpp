@@ -40,25 +40,23 @@ void activatePreviousInstance()
 
 int main(int argc, char *argv[])
 {
-    bool diagnosticLaunch = false;
-    for (int index = 1; index < argc; ++index)
-    {
-        if (QString::fromLocal8Bit(argv[index]) == QStringLiteral("--screenshot"))
-        {
-            diagnosticLaunch = true;
-            break;
-        }
-    }
-
     QCoreApplication::setOrganizationName(QStringLiteral("WinReminder"));
     QCoreApplication::setApplicationName(QStringLiteral("WinReminder"));
-    QCoreApplication::setApplicationVersion(QStringLiteral("2.0.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(WINREMINDER_VERSION));
 
     QQuickStyle::setStyle(QStringLiteral("FluentWinUI3"));
 
     // QLocalSocket 依赖应用对象，单实例检测放在 QApplication 构造之后
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    const QStringList arguments = app.arguments();
+    const int screenshotArgument = arguments.indexOf(QStringLiteral("--screenshot"));
+    const bool screenshotMode =
+        screenshotArgument >= 0
+        && screenshotArgument + 1 < arguments.size()
+        && !arguments.at(screenshotArgument + 1).startsWith(QStringLiteral("--"));
+    const bool diagnosticLaunch = screenshotMode;
 
 #ifdef Q_OS_WIN
     HANDLE mutex = nullptr;
@@ -74,10 +72,6 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    const QStringList arguments = app.arguments();
-    const int screenshotArgument = arguments.indexOf(QStringLiteral("--screenshot"));
-    const bool screenshotMode =
-        screenshotArgument >= 0 && screenshotArgument + 1 < arguments.size();
     const QString screenshotPath =
         screenshotMode ? QFileInfo(arguments.at(screenshotArgument + 1)).absoluteFilePath() : QString{};
     const int sizeArgument = arguments.indexOf(QStringLiteral("--window-size"));

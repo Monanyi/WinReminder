@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(WinReminder VERSION 2.0.0 LANGUAGES CXX)
+project(WinReminder VERSION 2.0.1 LANGUAGES CXX)
 
 include(CTest)
 
@@ -26,6 +26,11 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/app.rc"
     @ONLY
 )
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/app.manifest.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/app.manifest"
+    @ONLY
+)
 
 qt_add_executable(WinReminder
     WIN32
@@ -49,6 +54,7 @@ target_compile_definitions(WinReminder PRIVATE
     UNICODE
     _UNICODE
     WIN32_LEAN_AND_MEAN
+    WINREMINDER_VERSION="${PROJECT_VERSION}"
 )
 
 target_link_libraries(WinReminder PRIVATE

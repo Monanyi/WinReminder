@@ -3,7 +3,11 @@ rem Build a clean GitHub Release ZIP without personal reminder data.
 setlocal
 cd /d %~dp0
 
-set "VERSION=2.0.0"
+for /f "tokens=3" %%V in ('findstr /B /C:"project(WinReminder VERSION " "%~dp0CMakeLists.txt"') do set "VERSION=%%V"
+if not defined VERSION (
+    echo [ERROR] Cannot read the project version from CMakeLists.txt.
+    exit /b 1
+)
 set "RELEASE_DIR=%~dp0release"
 set "PACKAGE_NAME=WinReminder-%VERSION%-windows-x64"
 set "PACKAGE_DIR=%RELEASE_DIR%\%PACKAGE_NAME%"

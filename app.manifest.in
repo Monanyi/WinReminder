@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity version="2.0.0.0" processorArchitecture="*" name="WinReminder" type="win32"/>
+  <assemblyIdentity version="@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@.0"
+                    processorArchitecture="*" name="WinReminder" type="win32"/>
   <description>WinReminder - modern Windows reminder</description>
   <dependency>
     <dependentAssembly>
