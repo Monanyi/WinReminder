@@ -1,7 +1,5 @@
 # WinReminder — Windows 定时提醒
 
-[![Build and test](https://github.com/Monanyi/WinReminder/actions/workflows/build.yml/badge.svg)](https://github.com/Monanyi/WinReminder/actions/workflows/build.yml)
-
 使用 C++ 编写提醒逻辑，使用 Qt Quick / QML 构建现代界面。程序可以在托盘后台运行，到点后弹出置顶提醒并播放提示音。
 
 ![主界面预览](docs/images/main-window.png)
@@ -25,7 +23,6 @@
 - 使用原子写入的 `reminders.json` 保存数据，降低异常退出时损坏文件的风险
 - 首次启动会兼容迁移旧版 `reminders.dat`
 - 发布前自动运行核心测试，失败时不会更新 `dist`
-- 推送和 Pull Request 会通过 GitHub Actions 自动构建并运行测试
 - EXE 文件属性包含与 CMake 项目同步的版本信息
 
 ## 直接使用
@@ -88,7 +85,6 @@ Windows 自身或工具运行时仍可能在系统临时目录、字体缓存等
 | `src\` | C++ 后端、提醒调度、托盘、自启动及数据存储 |
 | `qml\` | Qt Quick 现代界面 |
 | `tests\` | Qt Test / CTest 自动化测试 |
-| `.github\workflows\` | GitHub Actions 自动构建与测试 |
 | `scripts\` | 本机构建环境加载脚本 |
 | `docs\images\` | README 使用的正式预览图片 |
 | `CMakeLists.txt` | Qt/CMake 构建配置 |
